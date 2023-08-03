@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'com.samprotic.samprotic_webview'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.samprotic.samprotic_webview"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
 //        versionCode 2
         versionCode 3
         versionName "1.0"
@@ -49,10 +49,10 @@ android {
 
 dependencies {
     // add
-    implementation 'com.google.android.gms:play-services-ads:22.1.0'
+    implementation 'com.google.android.gms:play-services-ads:22.2.0'
 
     //acoompanist webview
-    implementation "com.google.accompanist:accompanist-webview:0.31.4-beta"
+    implementation "com.google.accompanist:accompanist-webview:0.31.6-rc"
 
 
     implementation 'androidx.core:core-ktx:1.10.1'
