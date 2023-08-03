@@ -1,6 +1,8 @@
 package com.samprotic.samprotic_webview.webview_page.widget
 
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslError
 import android.webkit.CookieManager
 import android.webkit.SslErrorHandler
@@ -23,6 +25,7 @@ import com.google.accompanist.web.LoadingState
 import com.google.accompanist.web.WebView
 import com.google.accompanist.web.WebViewNavigator
 import com.google.accompanist.web.WebViewState
+import java.lang.Exception
 
 
 @Composable
@@ -45,6 +48,22 @@ fun WebViewBox(
                 super.onReceivedSslError(view, handler, error)
                 handler?.proceed()
 
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val url = request?.url.toString()
+                if (url.startsWith("https://") || url.startsWith("http://")) return false
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    view?.context?.startActivity(intent)
+                    return true
+                } catch (e: Exception) {
+                    return true
+                }
+//                return super.shouldOverrideUrlLoading(view, request)
             }
 
             override fun onPageStarted(
@@ -104,9 +123,9 @@ fun WebViewBox(
                         webView.settings.supportZoom()
                         webView.settings.javaScriptCanOpenWindowsAutomatically = true
                         webView.settings.useWideViewPort = true
-                        webView.settings.userAgentString =
-                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-                        webView.settings.setSupportMultipleWindows(true)
+                      //  webView.settings.userAgentString =
+                      //      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+
                         webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE
                         webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                         CookieManager.getInstance().removeAllCookies(null)
