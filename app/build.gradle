@@ -52,7 +52,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-ads:22.1.0'
 
     //acoompanist webview
-    implementation "com.google.accompanist:accompanist-webview:0.31.3-beta"
+    implementation "com.google.accompanist:accompanist-webview:0.31.4-beta"
 
 
     implementation 'androidx.core:core-ktx:1.10.1'

@@ -2,14 +2,17 @@ package com.samprotic.samprotic_webview.webview_page
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.webkit.CookieManager
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -55,7 +58,7 @@ fun WebViewPage(
 ) {
     val context: Context = LocalContext.current
 
-    var state = rememberWebViewState(url = AppData.websiteUrl)
+    var state = rememberWebViewState(url = AppData.ziaArchive)
     val navigator = rememberWebViewNavigator()
     val loadingState = state.loadingState
     var title by remember {
@@ -171,6 +174,7 @@ fun WebViewPage(
 
 
                             WebView(
+                                modifier = Modifier.fillMaxSize(),
                                 state = state,
                                 navigator = navigator,
                                 onCreated = { webView ->
@@ -181,6 +185,15 @@ fun WebViewPage(
                                     webView.settings.allowContentAccess = true
                                     webView.settings.allowFileAccess = true
                                     webView.settings.supportZoom()
+                                    webView.settings.javaScriptCanOpenWindowsAutomatically = true
+                                    webView.settings.useWideViewPort = true
+                                    webView.settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                                    webView.settings.setSupportMultipleWindows(true)
+                                    webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE
+                                    webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                    CookieManager.getInstance().removeAllCookies(null)
+
+
 
                                 },
                                 client = webClient,
