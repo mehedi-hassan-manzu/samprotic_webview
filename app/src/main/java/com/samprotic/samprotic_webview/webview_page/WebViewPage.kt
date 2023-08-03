@@ -2,7 +2,9 @@ package com.samprotic.samprotic_webview.webview_page
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.http.SslError
 import android.webkit.CookieManager
+import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.web.AccompanistWebViewClient
 import com.google.accompanist.web.LoadingState
 import com.google.accompanist.web.WebView
+import com.google.accompanist.web.WebViewNavigator
+import com.google.accompanist.web.WebViewState
 import com.google.accompanist.web.rememberWebViewNavigator
 import com.google.accompanist.web.rememberWebViewState
 import com.samprotic.samprotic_webview.admob.BannerAd
@@ -58,17 +63,22 @@ fun WebViewPage(
 ) {
     val context: Context = LocalContext.current
 
-    var state = rememberWebViewState(url = AppData.ziaArchive)
+    var state = rememberWebViewState(url = AppData.websiteUrl)
+
+
     val navigator = rememberWebViewNavigator()
+
     val loadingState = state.loadingState
-    var title by remember {
+
+    var title = remember {
         mutableStateOf("Loading....")
     }
+
     val isError = remember {
         mutableStateOf(false)
     }
     var singleError: WebResourceError? = null
-    var webView1: WebView? by remember { mutableStateOf(null) }
+    var webView1: MutableState<WebView?> = remember { mutableStateOf(null) }
 
 
 
@@ -76,7 +86,7 @@ fun WebViewPage(
     Scaffold(topBar = {
         TopAppBar(title = {
             Text(
-                text = title, style = MaterialTheme.typography.subtitle1
+                text = title.value, style = MaterialTheme.typography.subtitle1
             )
         },
 
@@ -98,7 +108,7 @@ fun WebViewPage(
                     }
                 }
 
-                IconButton(onClick = { webView1?.reload() }) {
+                IconButton(onClick = { webView1.value?.reload() }) {
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = "Menu")
 
                 }
@@ -126,95 +136,123 @@ fun WebViewPage(
                             .width(20.dp)
                     )
                 }
-                // A custom WebViewClient and WebChromeClient can be provided via subclassing
-                val webClient = remember {
-                    object : AccompanistWebViewClient() {
-                        override fun onPageStarted(
-                            view: WebView, url: String?, favicon: Bitmap?
-                        ) {
-                            super.onPageStarted(view, url, favicon)
-                            isError.value = false
-                            title = "Loading....."
-
-                        }
-
-                        override fun onPageFinished(view: WebView, url: String?) {
-                            super.onPageFinished(view, url)
-                            view.evaluateJavascript("(function() { return document.title; })();") { value ->
-                                title = value.removeSurrounding("\"")
-
-                            }
-                        }
-
-                        override fun onReceivedError(
-                            view: WebView, request: WebResourceRequest?, error: WebResourceError?
-                        ) {
-                            super.onReceivedError(view, request, error)
-                            title = "Error loading page"
-                            isError.value = true
-                        }
-                    }
-                }
-
-
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-
-                    if (isError.value) {
-                        WebViewErrorMessage {
-                            webView1?.reload()
-                        }
-
-                    } else {
-
-                        Box(modifier = Modifier.weight(1f)) {
-
-
-                            WebView(
-                                modifier = Modifier.fillMaxSize(),
-                                state = state,
-                                navigator = navigator,
-                                onCreated = { webView ->
-                                    webView1 = webView
-                                    webView.settings.javaScriptEnabled = true
-                                    webView.settings.loadsImagesAutomatically = true
-                                    webView.settings.domStorageEnabled = true
-                                    webView.settings.allowContentAccess = true
-                                    webView.settings.allowFileAccess = true
-                                    webView.settings.supportZoom()
-                                    webView.settings.javaScriptCanOpenWindowsAutomatically = true
-                                    webView.settings.useWideViewPort = true
-                                    webView.settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-                                    webView.settings.setSupportMultipleWindows(true)
-                                    webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE
-                                    webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                                    CookieManager.getInstance().removeAllCookies(null)
-
-
-
-                                },
-                                client = webClient,
-
-
-                                )
-
-                            if (loadingState is LoadingState.Loading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.align(Alignment.Center)
-                                )
-                            }
-                        }
-                    }
-
-                }
-
-
+                WebViewBox(
+                    isError = isError,
+                    title = title,
+                    webView1 = webView1,
+                    state = state,
+                    navigator = navigator,
+                    loadingState = loadingState
+                )
             }
 
         }
     }
 }
+
+
+@Composable
+fun WebViewBox(
+    isError: MutableState<Boolean>,
+    title: MutableState<String>,
+    webView1: MutableState<WebView?>,
+    state: WebViewState,
+    navigator: WebViewNavigator,
+    loadingState: LoadingState,
+) {
+
+    val webClient = remember {
+        object : AccompanistWebViewClient() {
+            override fun onReceivedSslError(
+                view: WebView?,
+                handler: SslErrorHandler?,
+                error: SslError?
+            ) {
+                super.onReceivedSslError(view, handler, error)
+                handler?.proceed()
+
+            }
+
+            override fun onPageStarted(
+                view: WebView, url: String?, favicon: Bitmap?
+            ) {
+                super.onPageStarted(view, url, favicon)
+                isError.value = false
+                title.value = "Loading....."
+
+            }
+
+            override fun onPageFinished(view: WebView, url: String?) {
+                super.onPageFinished(view, url)
+                view.evaluateJavascript("(function() { return document.title; })();") { value ->
+                    title.value = value.removeSurrounding("\"")
+
+                }
+            }
+
+            override fun onReceivedError(
+                view: WebView, request: WebResourceRequest?, error: WebResourceError?
+            ) {
+                super.onReceivedError(view, request, error)
+                title.value = "Error loading page"
+                isError.value = true
+            }
+        }
+    }
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+
+        if (isError.value) {
+            WebViewErrorMessage {
+                webView1.value?.reload()
+            }
+
+        } else {
+
+            Box(modifier = Modifier.weight(1f)) {
+
+
+                WebView(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    navigator = navigator,
+                    onCreated = { webView ->
+                        webView1.value = webView
+                        webView.settings.javaScriptEnabled = true
+                        webView.settings.loadsImagesAutomatically = true
+                        webView.settings.domStorageEnabled = true
+                        webView.settings.allowContentAccess = true
+                        webView.settings.allowFileAccess = true
+                        webView.settings.supportZoom()
+                        webView.settings.javaScriptCanOpenWindowsAutomatically = true
+                        webView.settings.useWideViewPort = true
+                        webView.settings.userAgentString =
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                        webView.settings.setSupportMultipleWindows(true)
+                        webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE
+                        webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                        CookieManager.getInstance().removeAllCookies(null)
+
+
+                    },
+                    client = webClient,
+
+
+                    )
+
+                if (loadingState is LoadingState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+        }
+
+    }
+}
+
 
